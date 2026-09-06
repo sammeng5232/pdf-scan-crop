@@ -1,0 +1,9 @@
+# User-generated inputs/outputs and logs
+*.pdf
+*.log
+*.tmp
+*.jsonl
+
+# Temporary extraction/cache files
+__pycache__/
+.cache/

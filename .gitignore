@@ -1,3 +1,7 @@
+# PyInstaller bundle: rebuilt by source/build_pdf_crop_exe.ps1, not tracked
+/PDF裁边.exe
+/_internal/
+
 # User-generated inputs/outputs and logs
 *.pdf
 *.log

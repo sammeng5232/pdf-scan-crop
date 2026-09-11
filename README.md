@@ -1,19 +1,18 @@
-# PDF 扫描裁边
+# PDF 扫描裁边 (pdf-scan-crop)
 
-Packaged Windows application for detecting and removing dirty scan edges while preserving page content, margins, footnotes, captions, tables, and normal whitespace.
+Windows desktop app that trims dirty scan edges from scanned-book PDFs while keeping text, footnotes, captions, tables, artwork and normal paper margins. Optional Tesseract OCR adds a copyable text layer.
 
 ## Run
 
-Double-click `PDF裁边.exe`. No command-line setup is required.
+Double-click `PDF裁边.exe` (or the desktop shortcut `Apps\DIY\PDF扫描裁边.lnk`), or drop a PDF onto either. `使用说明.txt` is the full guide.
 
-The full PyInstaller runtime is included under `_internal/`; `tessdata/` contains the OCR language data used by the application.
+- OCR needs Tesseract at `C:\Program Files\Tesseract-OCR\tesseract.exe`; the language data ships in `tessdata\`.
+- Page caches live in `%LOCALAPPDATA%\PDF裁边\cache\`, saved manual edits in `%LOCALAPPDATA%\PDF裁边\edits\`, settings in `%APPDATA%\PDF裁边\PDF裁边.ini`.
 
-## Features
+## Source and build
 
-- Preview automatic edge detection before generating output.
-- Manual crop adjustment, rotation, zoom, pan, and per-page overrides.
-- Optional OCR for one page or the whole book.
-- Chinese and English interface; the selected language is stored in `ui-settings.json`.
-- Reuses rendered page images when available.
+`source\` is a snapshot of the code this build was made from. The working copy lives in `Desktop\文件\文献处理\` (`pdf_crop_app.py` for the GUI, `fix_pdf_edges.py` for the engine and command line). To rebuild and redeploy, run from that folder in PowerShell:
 
-This repository contains the distributable bundle. The original standalone source project was not present beside the shortcut target.
+    .\build_pdf_crop_exe.ps1
+
+The script builds from `PDF裁边.spec` with Python 3.14 PyInstaller into `%TEMP%\pdf_crop_dist`, adds `tessdata\`, the guide and `source\`, then mirrors the result into this folder, leaving `.git`, `README.md` and `.gitignore` alone. The PyInstaller bundle itself (`PDF裁边.exe`, `_internal\`) is not tracked in git.

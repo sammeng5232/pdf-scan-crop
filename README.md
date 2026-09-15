@@ -15,4 +15,4 @@ Double-click `PDF裁边.exe` (or the desktop shortcut `Apps\DIY\PDF扫描裁边.
 
     .\build_pdf_crop_exe.ps1
 
-The script builds from `PDF裁边.spec` with Python 3.14 PyInstaller into `%TEMP%\pdf_crop_dist`, adds `tessdata\`, the guide and `source\`, then mirrors the result into this folder, leaving `.git`, `README.md` and `.gitignore` alone. The PyInstaller bundle itself (`PDF裁边.exe`, `_internal\`) is not tracked in git.
+The script builds from `PDF裁边.spec` with Python 3.14 PyInstaller into `%TEMP%\pdf_crop_dist`, adds `tessdata\`, the guide and `source\`, then mirrors the result into this folder, leaving `.git`, `.claude`, `README.md` and `.gitignore` alone (`-NoDeploy` builds only). The PyInstaller bundle (`PDF裁边.exe`, `_internal\`) is tracked in git, so a clone runs as-is; commit it again after rebuilding.

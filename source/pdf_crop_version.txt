@@ -2,8 +2,8 @@
 # PyInstaller version resource for PDF裁边.exe (referenced from PDF裁边.spec).
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(2026, 9, 15, 0),
-    prodvers=(2026, 9, 15, 0),
+    filevers=(2026, 9, 15, 1),
+    prodvers=(2026, 9, 15, 1),
     mask=0x3F,
     flags=0x0,
     OS=0x40004,
@@ -15,11 +15,11 @@ VSVersionInfo(
     StringFileInfo([
       StringTable('080404B0', [
         StringStruct('FileDescription', 'PDF 扫描裁边'),
-        StringStruct('FileVersion', '2026.9.15'),
+        StringStruct('FileVersion', '2026.9.15.1'),
         StringStruct('InternalName', 'PDF裁边'),
         StringStruct('OriginalFilename', 'PDF裁边.exe'),
         StringStruct('ProductName', 'PDF 扫描裁边'),
-        StringStruct('ProductVersion', '2026.9.15'),
+        StringStruct('ProductVersion', '2026.9.15.1'),
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [2052, 1200])]),

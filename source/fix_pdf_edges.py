@@ -1000,11 +1000,12 @@ def dirty_border_bounds(
         bottom = h
     if right - left < w * 0.86 or bottom - top < h * 0.88:
         left, top, right, bottom = 0, 0, w, h
-    dirt_left, dirt_right = left, right
     face_left, face_right = facing_page_cut(lum)
-    if face_left > left:
+    face_owns_left = face_left > left
+    face_owns_right = face_right < right
+    if face_owns_left:
         left = face_left
-    if face_right < right:
+    if face_owns_right:
         right = face_right
     sliver_left, sliver_right = page_sliver_cut(lum)
     if sliver_left > left:
@@ -1019,96 +1020,81 @@ def dirty_border_bounds(
         top = 0
     if bottom < h and keep_side_is_artwork(bottom, "bottom"):
         bottom = h
-    # A facing-page or sliver cut owns its side; otherwise re-judge the side
-    # against the binding line / shadow at the outer edge. Covers, stamped or
-    # colour-cast pages are left to the checks above.
+    # A facing-page cut owns its side. A dirt or sliver trim that runs well past
+    # the binding line or shadow is pulled back (the sliver test often mistakes
+    # the line for a page remnant); covers and colour-cast pages are left alone.
     if float((sat > 40).mean()) < 0.15:
-        if left <= dirt_left:
-            left = outer_line_trim(lum, paper, left)
-        if right >= dirt_right:
-            right = w - outer_line_trim(lum[:, ::-1], paper, w - right)
+        if left > 0 and not face_owns_left:
+            left = reduce_edge_overtrim(lum, paper, left)
+        if right < w and not face_owns_right:
+            right = w - reduce_edge_overtrim(lum[:, ::-1], paper, w - right)
     if right - left < w * 0.45:
         return 0, 0, w, h
     return left, top, right, bottom
 
 
-def _marked_columns(lum: np.ndarray, paper: float, limit: int) -> np.ndarray:
-    """Per column in [0, limit) of a left-oriented page: does it carry sharp dark marks?
-
-    Only the middle rows are read, so corner smears do not count. A binding
-    line leaves marks only at its own borders and a shadow gradient leaves none;
-    text, tables and drawings leave marks column after column.
-    """
-    h, w = lum.shape
-    limit = min(w - 2, limit)
-    if limit < 2:
-        return np.zeros(0, dtype=bool)
-    body = lum[int(h * 0.2) : int(h * 0.8), : limit + 2]
-    core = body[:, 1:-1]
-    sharp = (np.abs(body[:, 2:] - body[:, :-2]) > 60.0) & (core < paper - 60.0)
-    return sharp.mean(axis=0) >= 0.015
-
-
-def outer_line_trim(lum: np.ndarray, paper: float, cur: int) -> int:
-    """Left-edge trim that clears a vFlat binding line or page-edge shadow with a margin.
+def reduce_edge_overtrim(lum: np.ndarray, paper: float, cur: int) -> int:
+    """Pull a side trim back to just past the edge line or shadow it was meant to remove.
 
     `lum` is oriented so the edge under test is column 0 (pass lum[:, ::-1] for
-    the right edge); `cur` is the trim the other detectors chose. A thin line is
-    cleared by a comfortable margin (about 3% of the width, at most 5%). A wide
-    shadow band is cut about 3.5% in rather than chased to its end, keeping the
-    lighting cast on the paper. Trims that already clear the line are kept, and
-    the cut never runs into text or artwork.
+    the right edge) and `cur` is the trim chosen by the dirt detectors. The
+    shaded-column test often runs 4-8% of the width into clean paper; readers
+    who corrected such pages by hand cut about 2% past the end of the line or
+    shadow instead. The result is never larger than `cur`, so this step can
+    only keep more of the page.
     """
     h, w = lum.shape
-    if w < 200 or h < 200 or paper < 200:
+    if w < 200 or h < 200 or paper < 200 or cur <= 0 or cur > w * 0.10:
         return cur
-    reach = min(w // 3, max(60, int(round(w * 0.14))))
+    reach = min(w // 3, int(round(w * 0.12)))
     body = lum[int(h * 0.04) : int(h * 0.96), :reach]
     dark = body < paper - 60.0
     col = dark.mean(axis=0)
     half = dark.shape[0] // 2
     col_top = dark[:half].mean(axis=0)
     col_bottom = dark[half:].mean(axis=0)
-    zone = max(20, int(round(w * 0.04)))
-    threshold = 0.20
+    grey = (body < paper - 25.0).mean(axis=0)
+
+    # Full-height dark line starting near the edge.
+    line_end = 0
+    zone = int(round(w * 0.04))
     start = next(
-        (
-            x
-            for x in range(min(zone, reach))
-            if col[x] >= threshold and min(col_top[x], col_bottom[x]) >= threshold * 0.4
-        ),
+        (x for x in range(min(zone, reach)) if col[x] >= 0.15 and min(col_top[x], col_bottom[x]) >= 0.06),
         None,
     )
-    if start is None:
-        return cur
-    end = start + 1
-    for x in range(start, reach):
-        if col[x] >= threshold:
-            end = x + 1
-        elif x - end >= 6:
-            break
-    if end - start > w * 0.015:
-        # Wide shadow band: cut a fixed depth in, not at the far end of the gradient.
-        cut = min(max(w * 0.035, start + 20), end)
-        if abs(cur - cut) <= 15:
-            return cur
-        line_marks = start + 24
+    if start is not None:
+        gap = max(4, int(round(w * 0.0045)))
+        line_end = start + 1
+        for x in range(start, reach):
+            if col[x] >= 0.15:
+                line_end = x + 1
+            elif x - line_end >= gap:
+                break
+        if line_end - start > w * 0.015:
+            # A wide shadow band counts only its first stretch.
+            line_end = min(line_end, start + int(round(w * 0.02)))
+
+    # Faint grey structure (shadow, broken line) touching the edge.
+    grey_end = 0
+    miss = 0
+    gap = max(3, int(round(w * 0.003)))
+    for x in range(min(reach, int(w * 0.10))):
+        if grey[x] >= 0.04:
+            grey_end = x + 1
+            miss = 0
+        else:
+            miss += 1
+            if miss > gap and (grey_end > 0 or x > w * 0.02):
+                break
+
+    if line_end:
+        edge_end = max(line_end, min(grey_end, line_end + int(round(w * 0.01))))
     else:
-        high = w * 0.05
-        cut = max(min(max(end + 10, w * 0.03), high), end + 2)
-        if end <= cur <= max(high, end + 10) + 10:
-            return cur
-        line_marks = end + 12
-    cut = int(round(cut))
-    if cut > cur:
-        # The line must be followed by clear paper through the cut and a stretch
-        # of kept margin; a text column or picture near the edge keeps leaving marks.
-        keep = max(30, int(round(w * 0.02)))
-        marked = _marked_columns(lum, paper, cut + keep)
-        hits = np.flatnonzero(marked)
-        if hits.size and (int(hits[-1]) + 1 > line_marks or bool(marked[cut:].any())):
-            return cur
-    return cut
+        edge_end = grey_end
+    if edge_end <= 0 or cur < edge_end:
+        return cur
+    target = int(round(edge_end + w * 0.02))
+    return target if cur > target else cur
 
 
 def middle_slice(length: int, trim_ratio: float) -> slice:

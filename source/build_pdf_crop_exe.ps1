@@ -46,8 +46,8 @@ foreach ($name in $Sources) {
 Write-Host "Built: $App\PDF裁边.exe"
 if ($NoDeploy) { return }
 
-# Mirror into the deployed folder, leaving its git repo, README and .gitignore alone.
-robocopy $App $Deploy /MIR /XD .git /XF README.md .gitignore /NFL /NDL /NJH /NP | Out-Host
+# Mirror into the deployed folder, leaving its git repo, .claude folder, README and .gitignore alone.
+robocopy $App $Deploy /MIR /XD .git .claude /XF README.md .gitignore /NFL /NDL /NJH /NP | Out-Host
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
 $global:LASTEXITCODE = 0
 Write-Host "Deployed: $Deploy\PDF裁边.exe"

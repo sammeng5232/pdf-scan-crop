@@ -1,6 +1,5 @@
-# PyInstaller bundle: rebuilt by source/build_pdf_crop_exe.ps1, not tracked
-/PDF裁边.exe
-/_internal/
+# The packaged app (PDF裁边.exe + _internal/) is tracked so the repo runs as-is;
+# rebuild it with source/build_pdf_crop_exe.ps1.
 
 # User-generated inputs/outputs and logs
 *.pdf

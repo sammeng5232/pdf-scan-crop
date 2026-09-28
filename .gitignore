@@ -10,3 +10,22 @@
 # Temporary extraction/cache files
 __pycache__/
 .cache/
+
+# Added 2026-09-28 after a `git add .` audit: secrets, local data and build output
+.claude/
+ui-settings.json
+self-test.txt
+*.ini
+*.csv
+*_检查图/
+/build/
+/dist/
+.venv/
+*.spec.bak
+*.pfx
+*.p12
+*.pem
+*.key
+*.cer
+.env
+.env.*
